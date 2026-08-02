@@ -13,10 +13,7 @@ dependencies = [
     "PyYAML>=6.0",
     "windows-curses>=2.3; sys_platform == 'win32'",
 ]
-# pdftui also imports pdfpz.core.class_book_manifest.PdfManifestEntry
-# from the `backend` git submodule (github.com/sdhube/forkpdfpz, pinned to
-# v0.6.0) rather than a package index, so it can't be listed here. Install
-# it separately: `pip install -e ./backend -e .` (see run_app.sh).
+# backend (pdfpz) is a git submodule pinned to v0.6.0, not a package-index dep: `pip install -e ./backend -e .` (see run_app.sh).
 
 [project.scripts]
 pdftui = "pdftui.main:main"
