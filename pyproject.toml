@@ -15,8 +15,8 @@ dependencies = [
 ]
 # pdftui also imports pdfpz.core.class_book_manifest.PdfManifestEntry
 # from the `backend` git submodule (github.com/sdhube/forkpdfpz, pinned to
-# v0.4.0) rather than a package index, so it can't be listed here. Install
-# it separately: `pip install -e ./backend -e .` (see run_app.sh / CHANGELOG.md).
+# v0.6.0) rather than a package index, so it can't be listed here. Install
+# it separately: `pip install -e ./backend -e .` (see run_app.sh).
 
 [project.scripts]
 pdftui = "pdftui.main:main"
