@@ -79,9 +79,9 @@ class TuiSession:
     author_filter: str = "any"
     # "any" / "has" / "none" -- the isbn filter Select's value.
     isbn_filter: str = "any"
-    # field name (BASE_COLUMNS entries) -> whether that column is shown in
-    # the entries table. All on by default (today's fixed column set).
-    visible_base_columns: dict = field(default_factory=lambda: {name: True for name in BASE_COLUMNS})
+    # field name (BaseColumn member names) -> whether that column is shown
+    # in the entries table. All on by default (today's fixed column set).
+    visible_base_columns: dict = field(default_factory=lambda: {c.name: True for c in BaseColumn})
 
     def get_collection(self) -> BooksCollection:
         """building collection it (with
@@ -160,8 +160,6 @@ class BaseColumn(Enum):
     isbn = ("ISBN", 15)
 
 
-BASE_COLUMNS = tuple(c.name for c in BaseColumn)
-
 # "metadata" is reserved by SQLAlchemy's declarative base, so
 # BookViewPropsOrm maps that column onto metadata_ instead (see
 # db_schema.py) -- same mapping BooksPropsView.set_prop_filter() applies
@@ -195,11 +193,6 @@ def _props_checkboxes(entry_with_props) -> str:
 def _numeric_columns(entry_with_props):
     """Return NUMERIC_FIELDS' values (0-999-ish ints) as display strings."""
     return (str(getattr(entry_with_props, f)) for f in NUMERIC_FIELDS)
-
-
-def _base_column_value(entry, field_name: str) -> str:
-    """Return one BASE_COLUMNS field's value, truncated to its display width."""
-    return str(getattr(entry, field_name, "") or "")[: BaseColumn[field_name].width]
 
 
 class PdftuiController:
@@ -483,11 +476,11 @@ class PdftuiApp(App):
                 yield Button("Save settings", id="save-settings-btn")
             with Horizontal(id="column-toggles"):
                 yield Static("Columns:", id="column-toggles-label")
-                for col in BASE_COLUMNS:
+                for col in BaseColumn:
                     yield Checkbox(
-                        BaseColumn[col].label,
-                        value=self.controller.session.visible_base_columns[col],
-                        id=f"col-{col}-checkbox",
+                        col.label,
+                        value=self.controller.session.visible_base_columns[col.name],
+                        id=f"col-{col.name}-checkbox",
                     )
             with Vertical(id="filters-panel"):
                 yield Static("Row filters", id="filters-title")
@@ -545,7 +538,7 @@ class PdftuiApp(App):
         that just want a header refresh should follow with _refresh_table()."""
         table.clear(columns=True)
         visible = self.controller.session.visible_base_columns
-        base_headers = [BaseColumn[c].label for c in BASE_COLUMNS if visible.get(c, True)]
+        base_headers = [c.label for c in BaseColumn if visible.get(c.name, True)]
         table.add_columns(*base_headers, *(x[:3] for x in PROP_FIELDS), *(x[:3] for x in NUMERIC_FIELDS))
 
     # --- entries table ---
@@ -556,7 +549,7 @@ class PdftuiApp(App):
         entries = self.controller.visible_props_view()
         visible = self.controller.session.visible_base_columns
         for e in entries:
-            base_values = [_base_column_value(e, c) for c in BASE_COLUMNS if visible.get(c, True)]
+            base_values = [c.value_of(e) for c in BaseColumn if visible.get(c.name, True)]
             table.add_row(*base_values, *_props_checkboxes(e), *_numeric_columns(e), key=e.name)
         total = len(self.controller.entries())
         self.sub_title = f"policy={self.controller.session.policy} | entries in memory: {total} (shown: {len(entries)})"
@@ -621,7 +614,7 @@ class PdftuiApp(App):
             return
         if event.checkbox.id and event.checkbox.id.startswith("col-") and event.checkbox.id.endswith("-checkbox"):
             col = event.checkbox.id[len("col-") : -len("-checkbox")]
-            if col in BASE_COLUMNS:
+            if col in BaseColumn.__members__:
                 self.controller.session.visible_base_columns[col] = event.value
                 self._refresh_table()
 
