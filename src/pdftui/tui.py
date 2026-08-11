@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
 from typing import List, Optional
 
@@ -135,9 +136,32 @@ NUMERIC_FIELDS = ("ratio_ps_vs_renamed", "sz_ps_mega")
 
 # The entry-identifying columns shown before PROP_FIELDS/NUMERIC_FIELDS --
 # each can be shown/hidden independently via a "col-<name>-checkbox".
-BASE_COLUMNS = ("name", "norm_name", "title", "author", "year", "isbn")
-BASE_COLUMN_LABELS = {"name": "Name", "norm_name": "NName", "title": "Title", "author": "Author", "year": "Year", "isbn": "ISBN"}
-BASE_COLUMN_WIDTHS = {"name": 15, "norm_name": 35, "title": 35, "author": 30, "year": 6, "isbn": 15}
+#
+# BaseColumn binds a column's field name (the member name itself, e.g.
+# BaseColumn.name / BaseColumn.isbn), its display label, and its
+# truncation width together in one place, so they can't drift out of
+# sync the way three separately-maintained BASE_COLUMNS /
+# BASE_COLUMN_LABELS / BASE_COLUMN_WIDTHS literals could.
+class BaseColumn(Enum):
+    def __init__(self, label: str, width: int) -> None:
+        self.label = label
+        self.width = width
+
+    def value_of(self, entry) -> str:
+        """Return this column's value for entry, truncated to its display width."""
+        return str(getattr(entry, self.name, "") or "")[: self.width]
+
+    name = ("Name", 15)
+    norm_name = ("NName", 35)
+    title = ("Title", 35)
+    author = ("Author", 30)
+    year = ("Year", 6)
+    isbn = ("ISBN", 15)
+
+
+BASE_COLUMNS = tuple(c.name for c in BaseColumn)
+BASE_COLUMN_LABELS = {c.name: c.label for c in BaseColumn}
+BASE_COLUMN_WIDTHS = {c.name: c.width for c in BaseColumn}
 
 # "metadata" is reserved by SQLAlchemy's declarative base, so
 # BookViewPropsOrm maps that column onto metadata_ instead (see
