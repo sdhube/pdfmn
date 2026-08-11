@@ -79,11 +79,6 @@ class TuiSession:
     author_filter: str = "any"
     # "any" / "has" / "none" -- the isbn filter Select's value.
     isbn_filter: str = "any"
-    # field name (BaseColumn member names) -> whether that column is shown
-    # in the entries table. Defaults come from each member's own `visible`
-    # (today all True), so the default set of shown columns is bound to
-    # BaseColumn too instead of a separate hardcoded True here.
-    visible_base_columns: dict = field(default_factory=lambda: {c.name: c.visible for c in BaseColumn})
 
     def get_collection(self) -> BooksCollection:
         """building collection it (with
@@ -155,7 +150,10 @@ class BaseColumn(Enum):
     def __init__(self, label: str, width: int, visible: bool = True) -> None:
         self.label = label
         self.width = width
-        # default state of visible_base_columns' per-column toggle
+        # whether this column is shown in the entries table -- toggled
+        # directly (BaseColumn[col].visible = ...) by the column
+        # checkboxes, so it's the single source of truth for both the
+        # default and the current shown/hidden state.
         self.visible = visible
 
     # pythonic replace entry.field by field.value_of(entry)
@@ -490,7 +488,7 @@ class PdftuiApp(App):
                 for col in BaseColumn:
                     yield Checkbox(
                         col.label,
-                        value=self.controller.session.visible_base_columns[col.name],
+                        value=col.visible,
                         id=f"col-{col.name}-checkbox",
                     )
             with Vertical(id="filters-panel"):
@@ -543,13 +541,13 @@ class PdftuiApp(App):
         self._refresh_table()
 
     def _setup_columns(self, table: DataTable) -> None:
-        """(Re)build the table's column headers from the current
-        visible_base_columns toggles, plus the always-shown PROP_FIELDS/
-        NUMERIC_FIELDS columns. Clears any existing rows too -- callers
-        that just want a header refresh should follow with _refresh_table()."""
+        """(Re)build the table's column headers from each BaseColumn
+        member's current `visible` toggle, plus the always-shown
+        PROP_FIELDS/NUMERIC_FIELDS columns. Clears any existing rows too
+        -- callers that just want a header refresh should follow with
+        _refresh_table()."""
         table.clear(columns=True)
-        visible = self.controller.session.visible_base_columns
-        base_headers = [c.label for c in BaseColumn if visible.get(c.name, True)]
+        base_headers = [c.label for c in BaseColumn if c.visible]
         table.add_columns(*base_headers, *(x[:3] for x in PROP_FIELDS), *(x[:3] for x in NUMERIC_FIELDS))
 
     # --- entries table ---
@@ -558,9 +556,8 @@ class PdftuiApp(App):
         table = self.query_one("#entries-table", DataTable)
         self._setup_columns(table)
         entries = self.controller.visible_props_view()
-        visible = self.controller.session.visible_base_columns
         for e in entries:
-            base_values = [c.value_of(e) for c in BaseColumn if visible.get(c.name, True)]
+            base_values = [c.value_of(e) for c in BaseColumn if c.visible]
             table.add_row(*base_values, *_props_checkboxes(e), *_numeric_columns(e), key=e.name)
         total = len(self.controller.entries())
         self.sub_title = f"policy={self.controller.session.policy} | entries in memory: {total} (shown: {len(entries)})"
@@ -626,7 +623,7 @@ class PdftuiApp(App):
         if event.checkbox.id and event.checkbox.id.startswith("col-") and event.checkbox.id.endswith("-checkbox"):
             col = event.checkbox.id[len("col-") : -len("-checkbox")]
             if col in BaseColumn.__members__:
-                self.controller.session.visible_base_columns[col] = event.value
+                BaseColumn[col].visible = event.value
                 self._refresh_table()
 
     def on_input_changed(self, event: Input.Changed) -> None:
