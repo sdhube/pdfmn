@@ -376,7 +376,7 @@ class PdftuiApp(App):
     SUB_TITLE = "crawl a directory for PDFs and maintain a books manifest (json / yaml / sqlite)"
 
     CSS = """
-    #controls, #controls2, #column-toggles {
+    #controls, #controls2 {
         height: 3;
         padding: 0 1;
     }
@@ -425,6 +425,11 @@ class PdftuiApp(App):
         width: auto;
         content-align: left middle;
         margin-right: 1;
+    }
+    #column-toggles {
+        width: auto;
+        height: 3;
+        margin-left: 2;
     }
     #column-toggles Checkbox {
         margin-right: 1;
@@ -483,15 +488,15 @@ class PdftuiApp(App):
                 yield Button("Update Props", id="update-props-btn")
                 yield Button("Settings", id="settings-btn")
                 yield Button("Save settings", id="save-settings-btn")
-            with Horizontal(id="column-toggles"):
-                yield Static("Columns:", id="column-toggles-label")
-                for col in BaseColumn:
-                    # pythonic; use of enum members to get values for related ui object
-                    yield Checkbox(
-                        col.label,
-                        value=col.visible,
-                        id=f"col-{col.name}-checkbox",
-                    )
+                with Horizontal(id="column-toggles"):
+                    yield Static("Columns:", id="column-toggles-label")
+                    for col in BaseColumn:
+                        # pythonic; use of enum members to get values for related ui object
+                        yield Checkbox(
+                            col.label,
+                            value=col.visible,
+                            id=f"col-{col.name}-checkbox",
+                        )
             with Vertical(id="filters-panel"):
                 yield Static("Row filters", id="filters-title")
                 with Horizontal(id="controls3"):
