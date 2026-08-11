@@ -451,7 +451,7 @@ class PdftuiApp(App):
         color: $text-muted;
     }
     #output-log {
-        height: 10;
+        height: 7;
         border: solid $accent;
     }
     """
