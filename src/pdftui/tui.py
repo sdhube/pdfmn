@@ -139,9 +139,10 @@ NUMERIC_FIELDS = ("ratio_ps_vs_renamed", "sz_ps_mega")
 #
 # BaseColumn binds a column's field name (the member name itself, e.g.
 # BaseColumn.name / BaseColumn.isbn), its display label, and its
-# truncation width together in one place, so they can't drift out of
-# sync the way three separately-maintained BASE_COLUMNS /
-# BASE_COLUMN_LABELS / BASE_COLUMN_WIDTHS literals could.
+# truncation width together in one place -- callers get a column's
+# label/width straight off BaseColumn[field_name] instead of maintaining
+# separate BASE_COLUMN_LABELS / BASE_COLUMN_WIDTHS dicts that could drift
+# out of sync with it.
 class BaseColumn(Enum):
     def __init__(self, label: str, width: int) -> None:
         self.label = label
@@ -160,8 +161,6 @@ class BaseColumn(Enum):
 
 
 BASE_COLUMNS = tuple(c.name for c in BaseColumn)
-BASE_COLUMN_LABELS = {c.name: c.label for c in BaseColumn}
-BASE_COLUMN_WIDTHS = {c.name: c.width for c in BaseColumn}
 
 # "metadata" is reserved by SQLAlchemy's declarative base, so
 # BookViewPropsOrm maps that column onto metadata_ instead (see
@@ -200,7 +199,7 @@ def _numeric_columns(entry_with_props):
 
 def _base_column_value(entry, field_name: str) -> str:
     """Return one BASE_COLUMNS field's value, truncated to its display width."""
-    return str(getattr(entry, field_name, "") or "")[: BASE_COLUMN_WIDTHS[field_name]]
+    return str(getattr(entry, field_name, "") or "")[: BaseColumn[field_name].width]
 
 
 class PdftuiController:
@@ -486,7 +485,7 @@ class PdftuiApp(App):
                 yield Static("Columns:", id="column-toggles-label")
                 for col in BASE_COLUMNS:
                     yield Checkbox(
-                        BASE_COLUMN_LABELS[col],
+                        BaseColumn[col].label,
                         value=self.controller.session.visible_base_columns[col],
                         id=f"col-{col}-checkbox",
                     )
@@ -546,7 +545,7 @@ class PdftuiApp(App):
         that just want a header refresh should follow with _refresh_table()."""
         table.clear(columns=True)
         visible = self.controller.session.visible_base_columns
-        base_headers = [BASE_COLUMN_LABELS[c] for c in BASE_COLUMNS if visible.get(c, True)]
+        base_headers = [BaseColumn[c].label for c in BASE_COLUMNS if visible.get(c, True)]
         table.add_columns(*base_headers, *(x[:3] for x in PROP_FIELDS), *(x[:3] for x in NUMERIC_FIELDS))
 
     # --- entries table ---
