@@ -80,8 +80,10 @@ class TuiSession:
     # "any" / "has" / "none" -- the isbn filter Select's value.
     isbn_filter: str = "any"
     # field name (BaseColumn member names) -> whether that column is shown
-    # in the entries table. All on by default (today's fixed column set).
-    visible_base_columns: dict = field(default_factory=lambda: {c.name: True for c in BaseColumn})
+    # in the entries table. Defaults come from each member's own `visible`
+    # (today all True), so the default set of shown columns is bound to
+    # BaseColumn too instead of a separate hardcoded True here.
+    visible_base_columns: dict = field(default_factory=lambda: {c.name: c.visible for c in BaseColumn})
 
     def get_collection(self) -> BooksCollection:
         """building collection it (with
@@ -150,9 +152,11 @@ NUMERIC_FIELDS = ("ratio_ps_vs_renamed", "sz_ps_mega")
 class BaseColumn(Enum):
     """Enum class for logic of coloumn"""
 
-    def __init__(self, label: str, width: int) -> None:
+    def __init__(self, label: str, width: int, visible: bool = True) -> None:
         self.label = label
         self.width = width
+        # default state of visible_base_columns' per-column toggle
+        self.visible = visible
 
     # pythonic replace entry.field by field.value_of(entry)
     def value_of(self, entry) -> str:
