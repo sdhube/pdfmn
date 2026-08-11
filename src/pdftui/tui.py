@@ -486,6 +486,7 @@ class PdftuiApp(App):
             with Horizontal(id="column-toggles"):
                 yield Static("Columns:", id="column-toggles-label")
                 for col in BaseColumn:
+                    # pythonic; use of enum members to get values for related ui object
                     yield Checkbox(
                         col.label,
                         value=col.visible,
@@ -547,6 +548,7 @@ class PdftuiApp(App):
         -- callers that just want a header refresh should follow with
         _refresh_table()."""
         table.clear(columns=True)
+        # pythonic list comprehension, loop over Enum members, value toggled is in enum
         base_headers = [c.label for c in BaseColumn if c.visible]
         table.add_columns(*base_headers, *(x[:3] for x in PROP_FIELDS), *(x[:3] for x in NUMERIC_FIELDS))
 
@@ -623,6 +625,7 @@ class PdftuiApp(App):
         if event.checkbox.id and event.checkbox.id.startswith("col-") and event.checkbox.id.endswith("-checkbox"):
             col = event.checkbox.id[len("col-") : -len("-checkbox")]
             if col in BaseColumn.__members__:
+                # pythonic dynamic change value of Enum member by toggle event value, instead of a dict
                 BaseColumn[col].visible = event.value
                 self._refresh_table()
 
