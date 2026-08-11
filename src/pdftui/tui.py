@@ -394,6 +394,12 @@ class PdftuiApp(App):
         height: auto;
         padding: 0 1 1 1;
     }
+    #filters-divider {
+        width: 1;
+        min-height: 3;
+        margin-right: 2;
+        background: $accent;
+    }
     .filter-field {
         width: auto;
         height: auto;
@@ -517,6 +523,11 @@ class PdftuiApp(App):
                                 value=self.controller.session.max_filters[numeric_name],
                                 id=f"filter-{numeric_name}-input",
                             )
+                    # visual divider: everything left of this is a PROP_FIELDS/
+                    # NUMERIC_FIELDS any/true/false filter; author + isbn below
+                    # are a different any/has/none group (AUTHOR_FILTER_OPTIONS/
+                    # ISBN_FILTER_OPTIONS), not one of PROP_FIELDS.
+                    yield Static("", id="filters-divider")
                     with Vertical(classes="filter-field"):
                         yield Label("auth", classes="filter-field-label")
                         yield Select(
