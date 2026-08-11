@@ -143,11 +143,18 @@ NUMERIC_FIELDS = ("ratio_ps_vs_renamed", "sz_ps_mega")
 # label/width straight off BaseColumn[field_name] instead of maintaining
 # separate BASE_COLUMN_LABELS / BASE_COLUMN_WIDTHS dicts that could drift
 # out of sync with it.
+
+# pythonic replace logic of several dicts, list of fields with Enum class of fields instances and properties + value of function
+
+
 class BaseColumn(Enum):
+    """Enum class for logic of coloumn"""
+
     def __init__(self, label: str, width: int) -> None:
         self.label = label
         self.width = width
 
+    # pythonic replace entry.field by field.value_of(entry)
     def value_of(self, entry) -> str:
         """Return this column's value for entry, truncated to its display width."""
         return str(getattr(entry, self.name, "") or "")[: self.width]
